@@ -1,14 +1,11 @@
 import random
-class Battle:
+
+class battlecalc:
 
     def __init__(self, name, hp, attack):
         self.name = name
-        self.hp = hp
+        self.hp = int(hp)
         self.attack = attack
-        self.defense = defense
-    
-    def isAlive():
-        return self.hp > 0
     
     def attack(self, target):
         damage = random.randint(1, self.attack)

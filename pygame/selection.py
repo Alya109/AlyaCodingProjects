@@ -1,8 +1,15 @@
-from class import Battle
+import pandas as pd
+from battle import battlecalc
 
-def selectchar():
-    characters = {
-        1: ""
-        2: ""
-        3: ""
-    }
+# file initialization
+charcsv = "char.csv"
+
+
+def importcsv():
+    dbfile = pd.read_csv(charcsv)
+    return dbfile
+
+def choosechar(dbfile):
+    print
+
+
