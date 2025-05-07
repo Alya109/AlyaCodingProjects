@@ -1,0 +1,18 @@
+# transparent tb in windhawk
+
+Taskbar.TaskbarFrame > Grid#RootGrid > Taskbar.TaskbarBackground > Grid > Rectangle#BackgroundFill
+Visibility=Collapsed
+
+Taskbar.TaskbarFrame > Grid#RootGrid > Taskbar.TaskbarBackground > Grid > Rectangle#BackgroundStroke
+Fill=Transparent
+
+Taskbar.TaskbarFrame > Grid#RootGrid > Taskbar.TaskbarBackground#HoverFlyoutBackgroundControl > Grid > Rectangle#BackgroundFill
+Fill=Transparent
+
+Taskbar.TaskbarFrame > Grid#RootGrid > Taskbar.TaskbarBackground#HoverFlyoutBackgroundControl > Grid > Rectangle#BackgroundStroke
+Fill=Transparent
+
+MenuFlyoutPresenter
+Background=Transparent", "BorderBrush=Transparent
+
+
