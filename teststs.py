@@ -47,19 +47,14 @@ class ArrayBackend:
         return True
 
     def insert_at(self, idx, val):
-        # 1. Check Physical Capacity
         if len(self.arr) >= self.cap: return "FULL"
-        
-        # 2. Check Valid Bounds (0 to Capacity-1)
-        # We allow idx > len(arr) here (it will just append), 
-        # but we must NOT allow idx >= cap (that's outside memory).
+        # Check Valid Bounds (0 to Capacity-1) for UI safety
         if idx < 0 or idx >= self.cap: return "INDEX_ERROR"
         
         valid, conv = self.validate(val)
         if not valid: return "TYPE_ERROR"
         
-        # Python's list.insert() automatically handles "gaps" by appending 
-        # if the index is greater than the current length.
+        # Standard insert behavior (appends if idx > current length)
         self.arr.insert(idx, conv)
         return True
 
@@ -224,28 +219,26 @@ class ArrayVisualizer(ctk.CTkFrame):
         for i in range(len(self.bk.arr)): self.flash(i, "#1ABC9C")
 
     # ==========================================
-    #  MODIFIED INSERT LOGIC
+    #  UPDATED: CHECKS BEFORE INPUT
     # ==========================================
     def insert_at_idx(self):
+        # 1. CHECK FULL BEFORE INPUT
+        if len(self.bk.arr) >= self.bk.cap:
+            return self.update_status("Error: Array is Full! Cannot Insert.", "red")
+
         idx = self.get_input("Index to insert:", True)
         if idx is None: return
         
-        # 1. Capacity Check: Are we targeting a slot that exists physically?
-        # If Capacity is 5, indices 0-4 are valid. 5 is out of bounds.
+        # 2. Capacity Bound Check
         if idx >= self.bk.cap:
             return self.update_status(f"Error: Index {idx} out of bounds (0-{self.bk.cap - 1})", "red")
 
-        # 2. Note: We REMOVED the "idx > len(arr)" error.
-        # If user inputs Index 4 on a Length 3 array, Python will just append it.
-        # This matches the user's "normal append insert" request.
-        
         val = self.get_input(f"Value for index {idx}:")
         if not val: return
         
         res = self.bk.insert_at(idx, val)
         if res == True: 
             self.refresh()
-            # Calculate where it actually landed (in case of append behavior)
             final_idx = min(idx, len(self.bk.arr)-1) 
             self.update_status(f"Inserted at {final_idx}", "green")
             self.flash(final_idx, "#2CC985")
@@ -253,9 +246,13 @@ class ArrayVisualizer(ctk.CTkFrame):
         else: self.update_status(f"Error: {res}", "red")
 
     def modify_idx(self):
+        # 1. CHECK EMPTY BEFORE INPUT
+        if not self.bk.arr:
+             return self.update_status("Error: Array is empty!", "red")
+
         idx = self.get_input("Index to modify:", True)
         if idx is None: return
-        if not self.bk.arr: return self.update_status("Error: Array is empty!", "red")
+
         if not (0 <= idx < len(self.bk.arr)):
              return self.update_status(f"Error: Index {idx} out of bounds (0-{len(self.bk.arr)-1})", "red")
 
@@ -267,9 +264,13 @@ class ArrayVisualizer(ctk.CTkFrame):
         else: self.update_status(f"Error: {res}", "red")
 
     def del_idx(self):
+        # 1. CHECK EMPTY BEFORE INPUT
+        if not self.bk.arr:
+             return self.update_status("Error: Array is empty!", "red")
+
         idx = self.get_input("Index to delete:", True)
         if idx is None: return
-        if not self.bk.arr: return self.update_status("Error: Array is empty!", "red")
+
         if not (0 <= idx < len(self.bk.arr)):
              return self.update_status(f"Error: Index {idx} out of bounds (0-{len(self.bk.arr)-1})", "red")
 
