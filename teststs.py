@@ -48,9 +48,13 @@ class ArrayBackend:
 
     def insert_at(self, idx, val):
         if len(self.arr) >= self.cap: return "FULL"
+        # Check Valid Bounds (0 to Capacity-1) for UI safety
         if idx < 0 or idx >= self.cap: return "INDEX_ERROR"
+        
         valid, conv = self.validate(val)
         if not valid: return "TYPE_ERROR"
+        
+        # Standard insert behavior (appends if idx > current length)
         self.arr.insert(idx, conv)
         return True
 
@@ -196,10 +200,6 @@ class ArrayVisualizer(ctk.CTkFrame):
             else: self.update_status(f"Error: {msg}", "red")
 
     def access_idx(self):
-        # 1. CHECK EMPTY
-        if not self.bk.arr:
-            return self.update_status("Error: Array is empty!", "red")
-
         idx = self.get_input("Enter Index:", True)
         if idx is None: return
         val = self.bk.arr[idx] if 0 <= idx < len(self.bk.arr) else None
@@ -219,15 +219,17 @@ class ArrayVisualizer(ctk.CTkFrame):
         for i in range(len(self.bk.arr)): self.flash(i, "#1ABC9C")
 
     # ==========================================
-    #  MODIFIED METHODS
+    #  UPDATED: CHECKS BEFORE INPUT
     # ==========================================
     def insert_at_idx(self):
+        # 1. CHECK FULL BEFORE INPUT
         if len(self.bk.arr) >= self.bk.cap:
             return self.update_status("Error: Array is Full! Cannot Insert.", "red")
 
         idx = self.get_input("Index to insert:", True)
         if idx is None: return
         
+        # 2. Capacity Bound Check
         if idx >= self.bk.cap:
             return self.update_status(f"Error: Index {idx} out of bounds (0-{self.bk.cap - 1})", "red")
 
@@ -244,6 +246,7 @@ class ArrayVisualizer(ctk.CTkFrame):
         else: self.update_status(f"Error: {res}", "red")
 
     def modify_idx(self):
+        # 1. CHECK EMPTY BEFORE INPUT
         if not self.bk.arr:
              return self.update_status("Error: Array is empty!", "red")
 
@@ -261,6 +264,7 @@ class ArrayVisualizer(ctk.CTkFrame):
         else: self.update_status(f"Error: {res}", "red")
 
     def del_idx(self):
+        # 1. CHECK EMPTY BEFORE INPUT
         if not self.bk.arr:
              return self.update_status("Error: Array is empty!", "red")
 
@@ -283,10 +287,6 @@ class ArrayVisualizer(ctk.CTkFrame):
             b.configure(fg_color=col); self.after(800, lambda: b.configure(fg_color=orig))
 
     def search_val(self):
-        # 1. CHECK EMPTY
-        if not self.bk.arr:
-            return self.update_status("Error: Array is empty!", "red")
-
         target = self.get_input(f"Search Value ({self.bk.type}):")
         if not target: return
 
