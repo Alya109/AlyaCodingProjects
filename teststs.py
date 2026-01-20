@@ -40,6 +40,7 @@ class ArrayBackend:
         return True, "Success"
 
     def modify(self, idx, val):
+        # Backend double-check (redundant but safe)
         if not (0 <= idx < len(self.arr)): return "INDEX_ERROR"
         valid, conv = self.validate(val)
         if not valid: return "TYPE_ERROR"
@@ -218,11 +219,21 @@ class ArrayVisualizer(ctk.CTkFrame):
         self.update_status(f"Length: {len(self.bk.arr)}", "blue")
         for i in range(len(self.bk.arr)): self.flash(i, "#1ABC9C")
 
+    # ==========================================
+    #  MODIFIED METHODS WITH BOUNDARY CHECKS
+    # ==========================================
+
     def insert_at_idx(self):
         idx = self.get_input("Index to insert:", True)
         if idx is None: return
+
+        # BOUNDARY CHECK: Insert allows index == len(arr) (append), but not > len(arr)
+        if not (0 <= idx <= len(self.bk.arr)):
+             return self.update_status(f"Error: Index {idx} out of bounds (0-{len(self.bk.arr)})", "red")
+
         val = self.get_input(f"Value for index {idx}:")
         if not val: return
+        
         res = self.bk.insert_at(idx, val)
         if res == True: self.refresh(); self.update_status(f"Inserted at {idx}", "green"); self.flash(idx, "#2CC985")
         else: self.update_status(f"Error: {res}", "red")
@@ -230,8 +241,17 @@ class ArrayVisualizer(ctk.CTkFrame):
     def modify_idx(self):
         idx = self.get_input("Index to modify:", True)
         if idx is None: return
+
+        # BOUNDARY CHECK: Must be strictly < len(arr)
+        if len(self.bk.arr) == 0:
+             return self.update_status("Error: Array is empty!", "red")
+        
+        if not (0 <= idx < len(self.bk.arr)):
+             return self.update_status(f"Error: Index {idx} out of bounds (0-{len(self.bk.arr)-1})", "red")
+
         val = self.get_input(f"New Value for {idx}:")
         if not val: return
+
         res = self.bk.modify(idx, val)
         if res == True: self.refresh(); self.update_status(f"Modified {idx}", "green"); self.flash(idx, "#F39C12")
         else: self.update_status(f"Error: {res}", "red")
@@ -239,6 +259,14 @@ class ArrayVisualizer(ctk.CTkFrame):
     def del_idx(self):
         idx = self.get_input("Index to delete:", True)
         if idx is None: return
+
+        # BOUNDARY CHECK
+        if len(self.bk.arr) == 0:
+             return self.update_status("Error: Array is empty!", "red")
+        
+        if not (0 <= idx < len(self.bk.arr)):
+             return self.update_status(f"Error: Index {idx} out of bounds (0-{len(self.bk.arr)-1})", "red")
+
         if self.bk.delete(idx): self.refresh(); self.update_status(f"Deleted index {idx}", "green")
         else: self.update_status("Index Error", "red")
 
