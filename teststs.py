@@ -40,7 +40,7 @@ class ArrayBackend:
         return True, "Success"
 
     def modify(self, idx, val):
-        # Backend double-check (redundant but safe)
+        # Backend Check: Index must exist
         if not (0 <= idx < len(self.arr)): return "INDEX_ERROR"
         valid, conv = self.validate(val)
         if not valid: return "TYPE_ERROR"
@@ -48,6 +48,7 @@ class ArrayBackend:
         return True
 
     def insert_at(self, idx, val):
+        # Allow insertion at 0...len(arr) (contiguous)
         if len(self.arr) >= self.cap: return "FULL"
         if not (0 <= idx <= len(self.arr)): return "INDEX_ERROR"
         valid, conv = self.validate(val)
@@ -220,32 +221,41 @@ class ArrayVisualizer(ctk.CTkFrame):
         for i in range(len(self.bk.arr)): self.flash(i, "#1ABC9C")
 
     # ==========================================
-    #  MODIFIED METHODS WITH BOUNDARY CHECKS
+    #  MODIFIED METHODS WITH STRICTER LOGIC
     # ==========================================
 
     def insert_at_idx(self):
         idx = self.get_input("Index to insert:", True)
         if idx is None: return
+        
+        # 1. FIXED CAPACITY BOUNDS CHECK
+        # Even if len=5, inserting at 5 is "Out of Bounds" for the fixed capacity visualization
+        # unless we are in dynamic mode (which handles Full separately).
+        if idx >= self.bk.cap:
+            return self.update_status(f"Index {idx} is Out of Bounds (Max Index: {self.bk.cap - 1})", "red")
 
-        # BOUNDARY CHECK: Insert allows index == len(arr) (append), but not > len(arr)
-        if not (0 <= idx <= len(self.bk.arr)):
-             return self.update_status(f"Error: Index {idx} out of bounds (0-{len(self.bk.arr)})", "red")
+        # 2. CONTIGUOUS CHECK
+        # Cannot insert at 4 if array has 2 items (gap at 3).
+        if idx > len(self.bk.arr):
+            return self.update_status(f"Cannot skip slots. Next valid insert index is {len(self.bk.arr)}.", "red")
 
         val = self.get_input(f"Value for index {idx}:")
         if not val: return
         
         res = self.bk.insert_at(idx, val)
         if res == True: self.refresh(); self.update_status(f"Inserted at {idx}", "green"); self.flash(idx, "#2CC985")
+        elif res == "FULL": self.update_status("Array is Full (Cannot shift)", "red")
         else: self.update_status(f"Error: {res}", "red")
 
     def modify_idx(self):
         idx = self.get_input("Index to modify:", True)
         if idx is None: return
 
-        # BOUNDARY CHECK: Must be strictly < len(arr)
+        # EMPTY CHECK
         if len(self.bk.arr) == 0:
              return self.update_status("Error: Array is empty!", "red")
         
+        # BOUNDARY CHECK
         if not (0 <= idx < len(self.bk.arr)):
              return self.update_status(f"Error: Index {idx} out of bounds (0-{len(self.bk.arr)-1})", "red")
 
@@ -260,10 +270,11 @@ class ArrayVisualizer(ctk.CTkFrame):
         idx = self.get_input("Index to delete:", True)
         if idx is None: return
 
-        # BOUNDARY CHECK
+        # EMPTY CHECK
         if len(self.bk.arr) == 0:
              return self.update_status("Error: Array is empty!", "red")
         
+        # BOUNDARY CHECK
         if not (0 <= idx < len(self.bk.arr)):
              return self.update_status(f"Error: Index {idx} out of bounds (0-{len(self.bk.arr)-1})", "red")
 
@@ -284,39 +295,25 @@ class ArrayVisualizer(ctk.CTkFrame):
         if not target: return
 
         is_valid, _ = self.bk.validate(target)
-        
         if not is_valid:
-            # Stop immediately if the input doesn't match the Array Type
             self.update_status(f"Type Mismatch: '{target}' is not a {self.bk.type}", "red")
             return 
 
-        # Proceed only if valid
         found_idx = self.bk.search(target)
         
         def scan(i):
-            if i >= len(self.bk.arr): 
-                return self.update_status(f"'{target}' not found", "red")
-            
-            # Highlight current box being scanned
+            if i >= len(self.bk.arr): return self.update_status(f"'{target}' not found", "red")
             if i < len(self.boxes): self.boxes[i].configure(fg_color="#E67E22")
             self.update_status(f"Scanning index {i}...")
             
             def next_step():
-                # Reset color if it's not the target
-                if i < len(self.boxes) and i != found_idx: 
-                    self.boxes[i].configure(fg_color="#3B8ED0")
-                
-                # If found
+                if i < len(self.boxes) and i != found_idx: self.boxes[i].configure(fg_color="#3B8ED0")
                 if i == found_idx:
                     self.boxes[i].configure(fg_color="#2ECC71")
                     self.update_status(f"Found '{target}' at index {i}!", "green")
-                    # Reset success color after 2 seconds
                     self.after(2000, lambda: self.boxes[i].configure(fg_color="#3B8ED0"))
-                else: 
-                    scan(i + 1) # Continue scanning
-            
+                else: scan(i + 1)
             self.after(300, next_step)
-        
         scan(0)
 
     def animate_resize(self, new_item):
@@ -339,7 +336,7 @@ class ArrayVisualizer(ctk.CTkFrame):
                 ])
             else:
                 pop.destroy()
-                self.bk.insert(new_item, resize=True) # Already resized cap, just append
+                self.bk.insert(new_item, resize=True)
                 self.refresh()
                 self.update_status("Resize Complete", "green")
         step(0)
